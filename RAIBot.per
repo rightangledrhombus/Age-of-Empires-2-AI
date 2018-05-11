@@ -1,0 +1,253 @@
+;GOALS
+(defconst BUILD_ARMY 1)
+;CONSTANTS
+(defconst MAXIMUM_CIVILIANS 100)
+(defconst CIVILIANS_BEFORE_ATTACK 20)
+(defconst ATTACK_ARMY_SIZE 10)
+(defconst MAXIMUM_FOOD 650)
+(defconst MAXIMUM_CIVILIANS_DARK_AGE 18)
+(defconst MAXIMUM_DROP_DISTANCE 6)
+(defconst MIN_HOUSING_HEADROOM 5)
+(defconst WATER_ISLANDS 5)
+
+;set initial variables
+(defrule
+(true)
+=>
+(set-goal BUILD_ARMY 0)
+(set-strategic-number sn-percent-civilian-builders 100)
+(set-strategic-number sn-cap-civilian-builders 100)
+;exploring
+(set-strategic-number sn-percent-civilian-explorers 0)
+(set-strategic-number sn-total-number-explorers 3)
+(set-strategic-number sn-minimum-civilian-explorers 1)
+(set-strategic-number sn-cap-civilian-explorers 1)
+(set-strategic-number sn-initial-exploration-required 0)
+(set-strategic-number sn-percent-half-exploration 5)
+(set-strategic-number sn-number-explore-groups 1)
+;gathering percentages
+(set-strategic-number sn-food-gatherer-percentage 85)
+(set-strategic-number sn-wood-gatherer-percentage 15)
+(set-strategic-number sn-gold-gatherer-percentage 0)
+(set-strategic-number sn-stone-gatherer-percentage 0)
+;placement
+(set-strategic-number sn-random-placement-factor 2);>=0
+;attack
+(set-strategic-number sn-percent-attack-soldiers 50)
+(set-strategic-number sn-number-attack-groups 2)
+(set-strategic-number sn-minimum-attack-group-size 5)
+(set-strategic-number sn-maximum-attack-group-size 50)
+(set-strategic-number sn-attack-group-gather-spacing 2)
+(set-strategic-number sn-enemy-sighted-response-distance 20);>=0 and <= 144
+(set-strategic-number sn-attack-intelligence 1)
+;defence
+(set-strategic-number sn-defense-distance 20)
+(set-strategic-number sn-sentry-distance 100)
+;learning
+(set-strategic-number sn-save-scenario-information 1)
+(disable-self)
+)
+
+;activate army training
+(defrule
+(or
+	(town-under-attack)
+	(civilian-population > CIVILIANS_BEFORE_ATTACK)
+)
+=>
+(chat-local-to-self "Activating army training.")
+(set-goal BUILD_ARMY 1)
+(disable-self)
+)
+
+;*********
+;RESEARCH
+;*********
+
+;advance to feudal age
+(defrule
+(can-research feudal-age)
+=>
+(research feudal-age)
+)
+
+;research loom
+(defrule
+(can-research ri-loom)
+=>
+(research ri-loom)
+)
+
+;research town-watch
+(defrule
+(can-research ri-town-watch)
+=>
+(research ri-town-watch)
+)
+
+;research man-at-arms
+(defrule
+(goal BUILD_ARMY 1)
+(can-research ri-man-at-arms)
+=>
+(research ri-man-at-arms)
+)
+
+;research elite skirmisher
+(defrule
+(goal BUILD_ARMY 1)
+(can-research ri-elite-skirmisher)
+=>
+(research ri-elite-skirmisher)
+)
+
+;research crossbowman
+(defrule
+(goal BUILD_ARMY 1)
+(can-research ri-crossbow)
+=>
+(research ri-crossbow)
+)
+
+;*********
+;BUILDING
+;*********
+
+;build a house
+(defrule
+(housing-headroom < MIN_HOUSING_HEADROOM)
+(population-headroom != 0)
+(can-build house)
+=>
+(build house)
+)
+
+;build a barracks
+(defrule
+(can-build barracks)
+=>
+(build barracks)
+)
+
+;build an archery range
+(defrule
+(goal BUILD_ARMY 1)
+(can-build archery-range)
+=>
+(build archery-range)
+)
+
+;build a lumbercamp
+(defrule
+(building-type-count-total mill > 0)
+(dropsite-min-distance wood >= MAXIMUM_DROP_DISTANCE)	
+(can-build lumber-camp)
+=>
+(build lumber-camp)
+)
+
+;build a mill
+(defrule
+(building-type-count-total mill == 0)
+(resource-found food)
+(can-build mill)
+=>
+(build mill)	
+)
+
+;build a mining-camp
+(defrule
+(goal BUILD_ARMY 1)
+(dropsite-min-distance gold >= MAXIMUM_DROP_DISTANCE)
+(can-build mining-camp)
+=>
+(build mining-camp)
+)
+
+;build a dock
+(defrule
+(current-age != dark-age)
+(strategic-number sn-minimum-water-body-size-for-dock > WATER_ISLANDS)
+(can-build dock)
+=>
+(build dock)
+)
+
+;build a farm
+(defrule
+(idle-farm-count == 0)
+(can-build farm)
+=>
+(build farm)
+)
+
+;*********
+;TRAINING
+;*********
+
+;train a villager in the dark age
+(defrule
+(current-age == dark-age)
+(civilian-population <= MAXIMUM_CIVILIANS_DARK_AGE)
+(can-train villager)
+=>
+(train villager)
+)
+
+;train a villager
+(defrule
+(current-age != dark-age)
+(civilian-population <= MAXIMUM_CIVILIANS)
+(can-train villager)
+=>
+(train villager)
+)
+
+;train a militiaman-line
+(defrule
+(goal BUILD_ARMY 1)
+(can-train militiaman-line)
+=>
+(train militiaman-line)
+)
+
+;train a skirmisher-line
+(defrule
+(goal BUILD_ARMY 1)
+(can-train skirmisher-line)
+=>
+(train skirmisher-line)
+)
+
+;train a archer-line
+(defrule
+(goal BUILD_ARMY 1)
+(can-train archer-line)
+=>
+(train archer-line)
+)
+
+;train a galley
+(defrule
+(goal BUILD_ARMY 1)
+(can-train fire-ship-line)
+=>
+(train fire-ship-line)
+)
+
+;set gatherer distribution for villagers
+(defrule
+(current-age == feudal-age)
+=>
+(set-strategic-number sn-food-gatherer-percentage 50)
+(set-strategic-number sn-wood-gatherer-percentage 40)
+(set-strategic-number sn-stone-gatherer-percentage 5)
+(set-strategic-number sn-gold-gatherer-percentage 5)
+)
+
+;MILITARY COMMANDS
+;(defrule
+;(military-population >= ATTACK_ARMY_SIZE)
+;=>
+;(attack-now)
+;)
